@@ -14,7 +14,7 @@ const Dashboard = ({ messages, messagesEndRef }) => {
           <div className="message-content">
             {msg.text}
             <span className="message-meta">
-              {msg.type === 'user' ? 'You' : (msg.persona || 'PolyLingo')} • {msg.language.toUpperCase()}
+              {msg.type === 'user' ? 'You' : (msg.persona || 'PolyLingo')}
             </span>
           </div>
           {msg.type === 'user' && <div className="message-avatar">U</div>} {/* User Avatar */}

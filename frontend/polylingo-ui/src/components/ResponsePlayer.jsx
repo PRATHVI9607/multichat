@@ -1,24 +1,36 @@
-// src/components/ResponsePlayer.jsx
-import { useCallback } from 'react';
+import React, { useState } from 'react';
+import { synthesizeSpeech } from '../services/api';
 
-/**
- * Custom hook to encapsulate Text-to-Speech (TTS) functionality.
- * It uses the provided mockApiSynthesizeSpeech function.
- *
- * @param {Function} mockApiSynthesizeSpeech The mock API function for TTS.
- * @returns {Function} A function `playResponse` that can be called to play a text.
- */
-const useResponsePlayer = (mockApiSynthesizeSpeech) => {
+const ResponsePlayer = ({ text }) => {
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const playResponse = useCallback(async (text, language, enthusiasm) => {
-    if (text && mockApiSynthesizeSpeech) {
-      console.log(`[ResponsePlayer Hook] Preparing to speak: "${text}"`);
-      await mockApiSynthesizeSpeech(text, language, enthusiasm);
-      console.log(`[ResponsePlayer Hook] Finished speaking.`);
+  const handlePlay = () => {
+    if (text && !isLoading) {
+      setIsLoading(true);
+      synthesizeSpeech(text)
+        .then(response => {
+          const audio = new Audio(URL.createObjectURL(response.data));
+          audio.onplaying = () => setIsPlaying(true);
+          audio.onended = () => setIsPlaying(false);
+          audio.play();
+        })
+        .catch(error => {
+          console.error('Error synthesizing speech:', error);
+        })
+        .finally(() => {
+          setIsLoading(false);
+        });
     }
-  }, [mockApiSynthesizeSpeech]); // Dependency array for useCallback
+  };
 
-  return playResponse;
+  return (
+    <div>
+      <button onClick={handlePlay} disabled={!text || isLoading || isPlaying}>
+        {isLoading ? 'Loading...' : (isPlaying ? 'Playing...' : 'Play Response')}
+      </button>
+    </div>
+  );
 };
 
-export default useResponsePlayer;
+export default ResponsePlayer;

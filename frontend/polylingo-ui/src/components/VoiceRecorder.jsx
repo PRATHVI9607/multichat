@@ -1,39 +1,62 @@
-// src/components/VoiceRecorder.jsx
-import React, { useCallback } from 'react';
+import React, { useState, useRef } from 'react';
+import { transcribeAudio } from '../services/api';
 
-const VoiceRecorder = ({
-  isListening,
-  onToggleListening,       // Callback to change listening state in App.jsx
-  onSpeechRecognized,      // Callback to send recognized text to App.jsx
-  selectedLanguage,
-  mockApiRecognizeSpeech,  // The mock STT API function
-}) => {
-  const handleClick = useCallback(async () => {
-    // If we're not currently listening, start the process
-    if (!isListening) {
-      onToggleListening(true); // Inform parent we are starting to listen
+const VoiceRecorder = ({ onSpeechRecognized }) => {
+  const [isRecording, setIsRecording] = useState(false);
+  const mediaRecorderRef = useRef(null);
+  const audioChunksRef = useRef([]);
 
-      // Simulate speech recognition
-      const recognizedText = await mockApiRecognizeSpeech(selectedLanguage);
+  const handleStartRecording = () => {
+    navigator.mediaDevices.getUserMedia({ audio: true })
+      .then(stream => {
+        const mediaRecorder = new MediaRecorder(stream);
+        mediaRecorderRef.current = mediaRecorder;
+        mediaRecorder.ondataavailable = (event) => {
+          audioChunksRef.current.push(event.data);
+        };
+        mediaRecorder.onstop = () => {
+          const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/wav' });
+          const audioFile = new File([audioBlob], "recording.wav");
+          transcribeAudio(audioFile)
+            .then(response => {
+              onSpeechRecognized(response.data.text);
+            })
+            .catch(error => {
+              console.error('Error transcribing audio:', error);
+            });
+          audioChunksRef.current = [];
+        };
+        mediaRecorder.start();
+        setIsRecording(true);
+      })
+      .catch(error => {
+        console.error('Error accessing microphone:', error);
+      });
+  };
 
-      onToggleListening(false); // Inform parent we have stopped listening
-      if (recognizedText) {
-        onSpeechRecognized(recognizedText); // Send the recognized text to parent
-      }
+  const handleStopRecording = () => {
+    if (mediaRecorderRef.current) {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
     }
-    // If isListening was true, clicking means we *intended* to stop,
-    // but the mock automatically stops after recognition, so no extra action needed here.
-    // In a real app, you'd have a separate 'stop' logic.
-  }, [isListening, onToggleListening, onSpeechRecognized, selectedLanguage, mockApiRecognizeSpeech]);
+  };
+
+  const handleClick = () => {
+    if (isRecording) {
+      handleStopRecording();
+    } else {
+      handleStartRecording();
+    }
+  };
 
   return (
     <button
-      type="button" // Important: Prevents form submission
+      type="button"
       onClick={handleClick}
-      className={`voice-button ${isListening ? 'listening' : ''}`}
-      aria-label={isListening ? "Stop listening" : "Start voice input"}
+      className={`voice-button ${isRecording ? 'listening' : ''}`}
+      aria-label={isRecording ? "Stop recording" : "Start recording"}
     >
-      {isListening ? '🔴' : '🎤'} {/* Red dot when listening, microphone when not */}
+      {isRecording ? '🔴' : '🎤'}
     </button>
   );
 };

@@ -1,0 +1,12 @@
+fastapi
+uvicorn
+python-multipart
+vosk
+TTS
+pydantic
+pydub
+librosa
+torch
+numpy
+langdetect
+transformers
