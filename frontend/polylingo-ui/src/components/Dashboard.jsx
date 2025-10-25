@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { sendMessageToBot } from "../services/api";
+import { sendMessageToBot, synthesizeSpeech } from "../services/api";
 import ResponsePlayer from "./ResponsePlayer";
 import VoiceRecorder from "./VoiceRecorder";
 import PersonaSelector from "./PersonaSelector";
@@ -13,7 +13,7 @@ const Dashboard = () => {
 
   // 🧠 Core message handler (connects to backend)
   const handleUserMessage = async (message) => {
-    if (!message.trim()) return;
+    if (!message || !message.toString().trim()) return;
     setIsLoading(true);
 
     try {
@@ -32,9 +32,14 @@ const Dashboard = () => {
         },
       ]);
 
-      // 🎙️ Automatically play the bot’s reply
+      // 🎙️ Automatically play the bot’s reply using browser TTS
       if (response.reply) {
-        ResponsePlayer(response.reply, response.language);
+        // response.language may be like "en" or "es" - pass it if available
+        try {
+          synthesizeSpeech(response.reply, response.language || "en");
+        } catch (err) {
+          console.error("TTS error:", err);
+        }
       }
     } catch (error) {
       console.error("❌ Chat Error:", error);
@@ -48,19 +53,19 @@ const Dashboard = () => {
   const handleSendClick = () => handleUserMessage(userInput);
 
   // 🎤 Triggered when speech-to-text returns transcribed message
-  const handleVoiceInput = (transcribedText) => handleUserMessage(transcribedText);
+  const handleVoiceInput = (transcribedText) => {
+    if (transcribedText) handleUserMessage(transcribedText);
+  };
 
   return (
     <div className="dashboard">
       <h1 className="title">PolyLingo – Multilingual Voice Chatbot 🌍</h1>
 
-      {/* 🎭 Persona Selector */}
       <PersonaSelector
         selectedPersona={selectedPersona}
         onChange={(persona) => setSelectedPersona(persona)}
       />
 
-      {/* 💬 Chat Container */}
       <div className="chat-container">
         {chatHistory.map((msg, index) => (
           <div
@@ -71,8 +76,7 @@ const Dashboard = () => {
               <p>{msg.text}</p>
               {msg.sender === "bot" && (
                 <small className="meta">
-                  {msg.language?.toUpperCase()} · {msg.emotion?.toUpperCase()} ·{" "}
-                  {msg.persona?.toUpperCase()}
+                  {msg.language?.toUpperCase()} · {msg.emotion?.toUpperCase()} · {msg.persona?.toUpperCase()}
                 </small>
               )}
             </div>
@@ -81,7 +85,6 @@ const Dashboard = () => {
         {isLoading && <div className="loading">Thinking...</div>}
       </div>
 
-      {/* ✍️ Text Input */}
       <div className="input-container">
         <input
           type="text"
@@ -96,7 +99,7 @@ const Dashboard = () => {
         </button>
       </div>
 
-      {/* 🎙️ Voice Recorder */}
+      {/* VoiceRecorder uses onTranscription prop name */}
       <VoiceRecorder onTranscription={handleVoiceInput} />
     </div>
   );

@@ -199,19 +199,14 @@ html, body, #root {
 }
 
 .voice-button {
-  background-color: var(--primary-color);
-  color: var(--secondary-color);
+  background: #00bfff;
   border: none;
-  border-radius: 50%; /* Circular button */
-  width: 50px;
-  height: 50px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.5em; /* Icon size */
+  color: white;
+  padding: 12px;
+  border-radius: 50%;
+  font-size: 20px;
   cursor: pointer;
-  transition: background-color 0.2s ease-in-out, transform 0.1s ease-in-out;
-  flex-shrink: 0;
+  transition: transform 0.2s;
 }
 
 .voice-button:hover {
@@ -223,7 +218,7 @@ html, body, #root {
 }
 
 .voice-button.listening {
-  background-color: var(--danger-color); /* Red when actively listening */
+  background: #ff4444;
   animation: pulse 1s infinite;
 }
 
@@ -265,7 +260,38 @@ html, body, #root {
   border-color: var(--primary-color);
   outline: none;
 }
+.input-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 1rem;
+}
 
+.input-box {
+  flex: 1;
+  padding: 10px;
+  border-radius: 8px;
+  border: none;
+  outline: none;
+  background: #2d2d2d;
+  color: white;
+}
+
+.send-btn {
+  background: #00bfff;
+  color: white;
+  border: none;
+  padding: 10px 18px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background 0.3s;
+}
+
+.send-btn:hover {
+  background: #0099cc;
+}
 /* Custom styling for range input */
 .setting-group input[type="range"]::-webkit-slider-thumb {
   -webkit-appearance: none;

@@ -1,32 +1,34 @@
-// src/components/PersonaSelector.jsx
-import React, { useState, useEffect } from 'react';
-import { getPersonas } from '../services/api';
+import React, { useEffect, useState } from "react";
+import { getPersonas } from "../services/api";
 
-const PersonaSelector = ({ selectedPersona, setSelectedPersona }) => {
+const PersonaSelector = ({ selectedPersona, onChange }) => {
   const [personas, setPersonas] = useState([]);
 
   useEffect(() => {
-    getPersonas()
-      .then(response => {
-        setPersonas(data);
-      })
-      .catch(error => {
-        console.error('Error fetching personas:', error);
-      });
+    async function fetchPersonas() {
+      try {
+        const list = await getPersonas(); // not data.personas
+        setPersonas(list);
+      } catch (err) {
+        console.error("Error fetching personas:", err);
+      }
+    }
+    fetchPersonas();
   }, []);
 
-  const handlePersonaChange = (e) => setSelectedPersona(e.target.value);
-
   return (
-    <div className="settings-panel">
-      <div className="setting-group">
-        <label htmlFor="persona-select">Persona Style</label>
-        <select id="persona-select" value={selectedPersona} onChange={handlePersonaChange}>
-          {personas.map(persona => (
-            <option key={persona} value={persona}>{persona}</option>
-          ))}
-        </select>
-      </div>
+    <div className="persona-selector">
+      <select
+        className="persona-dropdown"
+        value={selectedPersona}
+        onChange={(e) => onChange(e.target.value)}
+      >
+        {personas.map((p) => (
+          <option key={p.id} value={p.id}>
+            {p.label}
+          </option>
+        ))}
+      </select>
     </div>
   );
 };

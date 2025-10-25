@@ -1,44 +1,61 @@
-import React, { useState, useRef } from 'react';
-import { transcribeAudio } from '../services/api';
+import React, { useState, useRef } from "react";
+import { transcribeAudio } from "../services/api";
 
-const VoiceRecorder = ({ onSpeechRecognized }) => {
+const VoiceRecorder = ({ onTranscription }) => {
   const [isRecording, setIsRecording] = useState(false);
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
 
-  const handleStartRecording = () => {
-    navigator.mediaDevices.getUserMedia({ audio: true })
-      .then(stream => {
-        const mediaRecorder = new MediaRecorder(stream);
-        mediaRecorderRef.current = mediaRecorder;
-        mediaRecorder.ondataavailable = (event) => {
-          audioChunksRef.current.push(event.data);
-        };
-        mediaRecorder.onstop = () => {
-          const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/wav' });
-          const audioFile = new File([audioBlob], "recording.wav");
-          transcribeAudio(audioFile)
-            .then(response => {
-              onSpeechRecognized(response.data.text);
-            })
-            .catch(error => {
-              console.error('Error transcribing audio:', error);
-            });
-          audioChunksRef.current = [];
-        };
-        mediaRecorder.start();
-        setIsRecording(true);
-      })
-      .catch(error => {
-        console.error('Error accessing microphone:', error);
-      });
+  const handleStartRecording = async () => {
+    try {
+      // Try to start local MediaRecorder (for visual feedback / optional upload)
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = mediaRecorder;
+      audioChunksRef.current = [];
+
+      mediaRecorder.ondataavailable = (event) => {
+        audioChunksRef.current.push(event.data);
+      };
+
+      mediaRecorder.onstop = () => {
+        // You can optionally do something with audioBlob (upload to backend)
+        audioChunksRef.current = [];
+      };
+
+      mediaRecorder.start();
+      setIsRecording(true);
+
+      // Start browser speech recognition (this is independent of MediaRecorder)
+      transcribeAudio()
+        .then((transcript) => {
+          if (onTranscription && typeof onTranscription === "function") {
+            onTranscription(transcript);
+          }
+        })
+        .catch((err) => {
+          console.error("Error transcribing:", err);
+        })
+        .finally(() => {
+          // stop media recorder if still running
+          try {
+            if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
+              mediaRecorderRef.current.stop();
+            }
+          } catch (e) {}
+          setIsRecording(false);
+        });
+    } catch (err) {
+      console.error("Error accessing microphone:", err);
+      setIsRecording(false);
+    }
   };
 
   const handleStopRecording = () => {
-    if (mediaRecorderRef.current) {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
       mediaRecorderRef.current.stop();
-      setIsRecording(false);
     }
+    setIsRecording(false);
   };
 
   const handleClick = () => {
@@ -53,10 +70,10 @@ const VoiceRecorder = ({ onSpeechRecognized }) => {
     <button
       type="button"
       onClick={handleClick}
-      className={`voice-button ${isRecording ? 'listening' : ''}`}
+      className={`voice-button ${isRecording ? "listening" : ""}`}
       aria-label={isRecording ? "Stop recording" : "Start recording"}
     >
-      {isRecording ? '🔴' : '🎤'}
+      {isRecording ? "🔴 Stop" : "🎤 Speak"}
     </button>
   );
 };

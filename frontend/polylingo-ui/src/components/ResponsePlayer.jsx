@@ -1,33 +1,29 @@
-import React, { useState } from 'react';
-import { synthesizeSpeech } from '../services/api';
+import React, { useState } from "react";
+import { synthesizeSpeech } from "../services/api";
 
-const ResponsePlayer = ({ text }) => {
+const ResponsePlayer = ({ text, language = "en" }) => {
   const [isPlaying, setIsPlaying] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
 
   const handlePlay = () => {
-    if (text && !isLoading) {
-      setIsLoading(true);
-      synthesizeSpeech(text)
-        .then(response => {
-          const audio = new Audio(URL.createObjectURL(response.data));
-          audio.onplaying = () => setIsPlaying(true);
-          audio.onended = () => setIsPlaying(false);
-          audio.play();
-        })
-        .catch(error => {
-          console.error('Error synthesizing speech:', error);
-        })
-        .finally(() => {
-          setIsLoading(false);
-        });
+    if (!text) return;
+
+    try {
+      const utt = synthesizeSpeech(text, language);
+      if (!utt) return;
+
+      setIsPlaying(true);
+      utt.onend = () => setIsPlaying(false);
+      utt.onerror = () => setIsPlaying(false);
+    } catch (err) {
+      console.error("Error playing response:", err);
+      setIsPlaying(false);
     }
   };
 
   return (
     <div>
-      <button onClick={handlePlay} disabled={!text || isLoading || isPlaying}>
-        {isLoading ? 'Loading...' : (isPlaying ? 'Playing...' : 'Play Response')}
+      <button onClick={handlePlay} disabled={!text || isPlaying}>
+        {isPlaying ? "Playing..." : "Play Response"}
       </button>
     </div>
   );
