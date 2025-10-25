@@ -1,45 +1,66 @@
-import random
+# backend/app/nlp/persona_engine.py
+from typing import Dict
 
-# Define personas with different response styles
+# Localized greetings/phrases
+GREETINGS = {
+    "en": {"hello": "Hey there", "bye": "See you soon"},
+    "hi": {"hello": "नमस्ते", "bye": "फिर मिलेंगे"},
+    "es": {"hello": "¡Hola!", "bye": "¡Hasta pronto!"},
+    "fr": {"hello": "Salut", "bye": "À bientôt"},
+}
+
+# Persona tone templates
 PERSONAS = {
     "friendly": {
-        "greetings": ["Hi there!", "Hello!", "Hey, how can I help?"],
-        "responses": {
-            "joy": "That's wonderful to hear!",
-            "sadness": "I'm sorry to hear that. I hope things get better.",
-            "anger": "Take a deep breath. It's going to be okay.",
-            "fear": "It's alright to be scared sometimes.",
-            "surprise": "Wow, that's unexpected!",
-            "disgust": "That sounds unpleasant.",
-            "neutral": "I see. Tell me more.",
-            "default": "Thanks for sharing."
-        },
-        "farewells": ["Goodbye!", "Talk to you later!", "Bye for now!"]
+        "style": "use warm and caring words, sprinkle emojis, and stay supportive.",
+        "examples": ["😊", "💖", "Glad to help!"]
+    },
+    "witty": {
+        "style": "add light humor, clever remarks, and casual tone.",
+        "examples": ["😏", "😉", "Smart move, huh?"]
     },
     "professional": {
-        "greetings": ["Good day.", "Hello, how may I assist you?"],
-        "responses": {
-            "joy": "I'm pleased to hear that.",
-            "sadness": "I understand. Please let me know if there's anything I can do.",
-            "anger": "I recommend taking a moment to collect your thoughts.",
-            "fear": "I understand your concern.",
-            "surprise": "That is surprising.",
-            "disgust": "That is noted.",
-            "neutral": "Understood.",
-            "default": "Thank you for the information."
-        },
-        "farewells": ["Sincerely.", "Goodbye."]
+        "style": "stay concise, polite, and formal.",
+        "examples": ["👍", "Understood.", "Let me handle that."]
+    },
+    "caring": {
+        "style": "be empathetic and reassuring.",
+        "examples": ["🤗", "💙", "I'm here for you."]
     }
 }
 
-def get_persona(persona_name: str):
-    """
-    Retrieves a persona by name.
-    """
-    return PERSONAS.get(persona_name.lower(), PERSONAS["friendly"])
 
-def get_all_personas():
+def apply_persona(text: str, persona: str = "friendly", language: str = "en") -> Dict:
     """
-    Returns a list of all available persona names.
+    Returns a modified prompt/response with persona styling and localized greeting.
     """
-    return list(PERSONAS.keys())
+    persona_data = PERSONAS.get(persona, PERSONAS["friendly"])
+    localized = GREETINGS.get(language, GREETINGS["en"])
+
+    # choose greeting based on keywords
+    greeting = localized["hello"] if any(word in text.lower() for word in ["hi", "hello", "hola", "नमस्ते"]) else ""
+
+    # compose tone description for prompt or final text
+    tone = f"Respond in a {persona} tone. {persona_data['style']}"
+    decorated = f"{greeting} {text}".strip()
+
+    return {
+        "persona": persona,
+        "language": language,
+        "modified_text": decorated,
+        "tone_instruction": tone,
+        "emoji_hint": persona_data["examples"][0]
+    }
+
+
+if __name__ == "__main__":
+    samples = [
+        ("Hello there!", "friendly", "en"),
+        ("Hola amigo!", "witty", "es"),
+        ("Bonjour!", "professional", "fr"),
+        ("नमस्ते", "caring", "hi")
+    ]
+    for text, persona, lang in samples:
+        print(f"\n{text} | Persona: {persona}, Lang: {lang}")
+        result = apply_persona(text, persona, lang)
+        print(result)
