@@ -56,7 +56,7 @@ function App() {
         <Dashboard messages={messages} messagesEndRef={messagesEndRef} />
       </main>
 
-      <footer className="App-footer">
+      {/* <footer className="App-footer">
         <form onSubmit={handleSendMessage} className="input-container">
           <input
             type="text"
@@ -73,7 +73,7 @@ function App() {
           selectedPersona={selectedPersona}
           setSelectedPersona={setSelectedPersona}
         />
-      </footer>
+      </footer> */}
     </div>
   );
 }

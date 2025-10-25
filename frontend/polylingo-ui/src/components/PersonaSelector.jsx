@@ -8,7 +8,7 @@ const PersonaSelector = ({ selectedPersona, setSelectedPersona }) => {
   useEffect(() => {
     getPersonas()
       .then(response => {
-        setPersonas(response.data.personas);
+        setPersonas(data);
       })
       .catch(error => {
         console.error('Error fetching personas:', error);
@@ -18,8 +18,8 @@ const PersonaSelector = ({ selectedPersona, setSelectedPersona }) => {
   const handlePersonaChange = (e) => setSelectedPersona(e.target.value);
 
   return (
-    <div class="settings-panel">
-      <div class="setting-group">
+    <div className="settings-panel">
+      <div className="setting-group">
         <label htmlFor="persona-select">Persona Style</label>
         <select id="persona-select" value={selectedPersona} onChange={handlePersonaChange}>
           {personas.map(persona => (
