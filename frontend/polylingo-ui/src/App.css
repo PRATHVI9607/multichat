@@ -367,7 +367,8 @@ html, body, #root {
 
   .App-title {
     margin-left: 0;
-    margin-top: calc(var(--spacing-unit) / 2);
+    margin-top: 0;
+    
   }
 
   .input-container {
@@ -402,7 +403,7 @@ body {
 
 .dashboard {
   max-width: 800px;
-  margin: 3rem auto;
+  margin: 0 auto;
   padding: 2rem;
   background: rgba(255, 255, 255, 0.05);
   border-radius: 15px;
@@ -472,3 +473,4 @@ body {
   color: #fff;
   max-width: 70%;
 }
+

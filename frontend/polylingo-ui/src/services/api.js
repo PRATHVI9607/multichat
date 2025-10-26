@@ -26,39 +26,74 @@ export async function sendMessageToBot(user_input, user_id = "guest", persona = 
    Uses browser’s SpeechSynthesis API for multilingual support.
    Returns the utterance object so callers can observe events.
    ========================================================================== */
-export function synthesizeSpeech(text, language = "en") {
-  if (!text) return null;
+export async function synthesizeSpeech(text, language = "en") {
+  if (!text) return;
+
+  // 🌍 Language mapping
+  const langMap = {
+    en: "en-US",
+    es: "es-ES",
+    fr: "fr-FR",
+    hi: "hi-IN",
+    ja: "ja-JP",
+    ko: "ko-KR",
+    zh: "zh-CN",
+    ar: "ar-SA",
+    ru: "ru-RU",
+    de: "de-DE",
+    it: "it-IT",
+    pt: "pt-BR",
+    tr: "tr-TR",
+    fi: "fi-FI",
+    el: "el-GR",
+  };
+  const targetLang = langMap[language] || "en-US";
+
+  // 🕒 Wait for voices to load
+  const loadVoices = () =>
+    new Promise((resolve) => {
+      let voices = speechSynthesis.getVoices();
+      if (voices.length) return resolve(voices);
+      speechSynthesis.onvoiceschanged = () => {
+        voices = speechSynthesis.getVoices();
+        resolve(voices);
+      };
+    });
+
+  const voices = await loadVoices();
+
+  // 🎯 Prefer Google voices for target language
+  let matchedVoice =
+    voices.find(
+      (v) =>
+        v.name.includes("Google") &&
+        (v.lang.toLowerCase().startsWith(targetLang.toLowerCase()) ||
+          v.lang.toLowerCase().startsWith(language.toLowerCase()))
+    ) ||
+    // fallback: any voice matching target language
+    voices.find((v) => v.lang.toLowerCase().startsWith(targetLang.toLowerCase())) ||
+    voices.find((v) => v.lang.toLowerCase().startsWith(language.toLowerCase())) ||
+    // fallback: Google US English
+    voices.find((v) => v.name.includes("Google US English")) ||
+    voices[0];
+
+  console.log(
+    `%c🎤 Speaking "${text}" in ${targetLang} using: ${matchedVoice?.name || "Default Voice"}`,
+    "color:#00ffff;font-weight:bold;"
+  );
 
   const utterance = new SpeechSynthesisUtterance(text);
-  utterance.lang = language || "en-US";
-  utterance.rate = 1.0;
-  utterance.pitch = 1.0;
+  utterance.voice = matchedVoice;
+  utterance.lang = matchedVoice.lang;
+  utterance.pitch = 1;
+  utterance.rate = 1;
 
-  // pick a voice matching the language if available
-  const voices = window.speechSynthesis.getVoices();
-  const selectedVoice = voices.find((v) => v.lang && v.lang.startsWith(language)) || voices[0];
-  if (selectedVoice) utterance.voice = selectedVoice;
-
-  // speak (non-blocking)
-  window.speechSynthesis.speak(utterance);
-
-  // return utterance so caller can hook onend/onstart if needed
-  return utterance;
+  // Stop any current speech and start new
+  speechSynthesis.cancel();
+  speechSynthesis.speak(utterance);
 }
 
-/* Optional helper if you want a Promise-based wrapper */
-export function synthesizeSpeechAsync(text, language = "en") {
-  return new Promise((resolve, reject) => {
-    try {
-      const utt = synthesizeSpeech(text, language);
-      if (!utt) return resolve();
-      utt.onend = () => resolve();
-      utt.onerror = (e) => reject(e);
-    } catch (err) {
-      reject(err);
-    }
-  });
-}
+
 
 /* ============================================================================
    🎤 3. Transcribe audio (Speech-to-Text)

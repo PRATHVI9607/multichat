@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { sendMessageToBot, synthesizeSpeech } from "../services/api";
 import ResponsePlayer from "./ResponsePlayer";
 import VoiceRecorder from "./VoiceRecorder";
@@ -10,6 +10,15 @@ const Dashboard = () => {
   const [userInput, setUserInput] = useState("");
   const [selectedPersona, setSelectedPersona] = useState("friendly");
   const [isLoading, setIsLoading] = useState(false);
+  useEffect(() => {
+  // 🔊 Preload speech synthesis voices early to avoid first-call lag
+  speechSynthesis.getVoices();
+
+  // 🧠 Some browsers (like Chrome) need this trick to ensure they actually load
+  window.speechSynthesis.onvoiceschanged = () => {
+    console.log("✅ Voices loaded:", speechSynthesis.getVoices().length);
+  };
+}, []);
 
   // 🧠 Core message handler (connects to backend)
   const handleUserMessage = async (message) => {
@@ -37,6 +46,7 @@ const Dashboard = () => {
         // response.language may be like "en" or "es" - pass it if available
         try {
           synthesizeSpeech(response.reply, response.language || "en");
+          console.log(response.language);
         } catch (err) {
           console.error("TTS error:", err);
         }
@@ -104,5 +114,6 @@ const Dashboard = () => {
     </div>
   );
 };
+
 
 export default Dashboard;
